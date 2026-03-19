@@ -1,7 +1,420 @@
-cd ai-guide-pages
-git init
-git add .
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/mtfbwyou/ai-guide-bot-pages.git
-git push -u origin main
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 가이드봇</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede8;
+    --text: #1a1a18; --text2: #6b6b67; --text3: #a0a09b;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --purple-bg: #EEEDFE; --purple-mid: #7F77DD; --purple-dark: #3C3489;
+    --teal: #1D9E75; --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252522; --bg3: #2e2e2b;
+      --text: #f0efe8; --text2: #a0a09b; --text3: #6b6b67;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+      --purple-bg: #26215C; --purple-dark: #AFA9EC;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+  #header { padding: 14px 20px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--purple-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--purple-dark); font-weight: 600; flex-shrink: 0; }
+  .header-text h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .header-text p { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+  #level-bar { padding: 10px 20px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  #level-bar span { font-size: 12px; color: var(--text2); }
+  .lv-btn { padding: 5px 14px; border-radius: 20px; border: 0.5px solid var(--border2); font-size: 12px; font-family: inherit; cursor: pointer; background: var(--bg); color: var(--text2); transition: all 0.15s; }
+  .lv-btn.active-beginner { background: #E1F5EE; color: #0F6E56; border-color: #1D9E75; font-weight: 600; }
+  .lv-btn.active-advanced { background: var(--purple-bg); color: var(--purple-dark); border-color: var(--purple-mid); font-weight: 600; }
+  #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { display: flex; gap: 10px; max-width: 88%; animation: fadeUp 0.2s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-bubble { padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.65; }
+  .msg.bot .msg-bubble { background: var(--bg2); color: var(--text); border-bottom-left-radius: 4px; border: 0.5px solid var(--border); }
+  .msg.user .msg-bubble { background: var(--purple-dark); color: #f0efff; border-bottom-right-radius: 4px; }
+  .msg-av { width: 28px; height: 28px; border-radius: 50%; background: var(--purple-bg); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--purple-dark); font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+  .msg-bubble strong { font-weight: 600; }
+  .msg-bubble a { color: var(--purple-mid); text-decoration: underline; }
+  .feat-btns { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .feat-btn { padding: 6px 13px; border: 0.5px solid var(--border2); border-radius: 20px; font-size: 12px; color: var(--text2); cursor: pointer; background: var(--bg); font-family: inherit; transition: all 0.15s; }
+  .feat-btn:hover { background: var(--purple-bg); color: var(--purple-dark); border-color: var(--purple-mid); }
+  #chips-wrap { padding: 0 20px 12px; flex-shrink: 0; }
+  .chips-label { font-size: 11px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { padding: 6px 13px; border: 0.5px solid var(--border2); border-radius: 20px; font-size: 12px; color: var(--text2); cursor: pointer; background: var(--bg); font-family: inherit; transition: all 0.15s; }
+  .chip:hover { background: var(--purple-bg); color: var(--purple-dark); border-color: var(--purple-mid); }
+  .chip-task { background: var(--bg2); }
+  .chip-task:hover { background: #E1F5EE; color: #0F6E56; border-color: #1D9E75; }
+  #input-area { padding: 12px 16px; border-top: 0.5px solid var(--border); display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; }
+  #user-input { flex: 1; padding: 9px 15px; border: 0.5px solid var(--border2); border-radius: 20px; font-size: 14px; font-family: inherit; resize: none; background: var(--bg); color: var(--text); outline: none; max-height: 80px; line-height: 1.5; }
+  #user-input:focus { border-color: var(--purple-mid); }
+  #user-input::placeholder { color: var(--text3); }
+  #send-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--purple-dark); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+  #send-btn:hover { opacity: 0.85; }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #send-btn svg { width: 15px; height: 15px; fill: white; }
+  .typing { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  .lv-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-bottom: 6px; }
+  .lv-badge.b { background: #E1F5EE; color: #0F6E56; }
+  .lv-badge.a { background: var(--purple-bg); color: var(--purple-dark); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="avatar">AI</div>
+  <div class="header-text">
+    <h1>AI 가이드봇</h1>
+    <p>어떤 AI 도구든 물어보세요</p>
+  </div>
+  <div class="status"><div class="dot"></div>온라인</div>
+</div>
+
+<div id="level-bar">
+  <span>내 수준:</span>
+  <button class="lv-btn active-beginner" id="btn-beginner" onclick="setLevel('beginner')">🌱 AI 처음이에요</button>
+  <button class="lv-btn" id="btn-advanced" onclick="setLevel('advanced')">⚡ 어느 정도 알아요</button>
+</div>
+
+<div id="messages"></div>
+
+<div id="chips-wrap">
+  <div class="chips-label">빠른 질문</div>
+  <div class="chips">
+    <button class="chip" onclick="sendChip('ChatGPT 알려줘')">ChatGPT</button>
+    <button class="chip" onclick="sendChip('Claude 알려줘')">Claude</button>
+    <button class="chip" onclick="sendChip('Midjourney 알려줘')">Midjourney</button>
+    <button class="chip" onclick="sendChip('Cursor AI 알려줘')">Cursor AI</button>
+    <button class="chip" onclick="sendChip('Perplexity 알려줘')">Perplexity</button>
+    <button class="chip" onclick="sendChip('Notion AI 알려줘')">Notion AI</button>
+  </div>
+  <div class="chips-label" style="margin-top:10px;">업무별 추천</div>
+  <div class="chips">
+    <button class="chip chip-task" onclick="sendChip('PPT 만들 때 쓸 AI 추천해줘')">📊 PPT 제작</button>
+    <button class="chip chip-task" onclick="sendChip('회의록 정리에 좋은 AI 추천해줘')">📝 회의록 정리</button>
+    <button class="chip chip-task" onclick="sendChip('이미지 만들 때 쓸 AI 추천해줘')">🎨 이미지 생성</button>
+    <button class="chip chip-task" onclick="sendChip('영상 편집에 좋은 AI 추천해줘')">🎬 영상 편집</button>
+    <button class="chip chip-task" onclick="sendChip('문서 요약에 좋은 AI 추천해줘')">📄 문서 요약</button>
+    <button class="chip chip-task" onclick="sendChip('코딩할 때 쓸 AI 추천해줘')">💻 코딩 보조</button>
+  </div>
+</div>
+
+<div id="input-area">
+  <textarea id="user-input" placeholder="예: 'Claude 알려줘', 'PPT 만들 AI 추천해줘'" rows="1"
+    onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  <button id="send-btn" onclick="sendMessage()">
+    <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+  </button>
+</div>
+
+<script>
+const AI_FEATURES = {
+  'chatgpt': {
+    name: 'ChatGPT',
+    features: [
+      { label: '💬 기본 채팅', prompt: 'ChatGPT 기본 채팅 기능 사용법 알려줘' },
+      { label: '🖼️ 이미지 생성 (DALL-E)', prompt: 'ChatGPT DALL-E 이미지 생성 기능 알려줘' },
+      { label: '📁 파일 분석', prompt: 'ChatGPT 파일 업로드 및 분석 기능 알려줘' },
+      { label: '🤖 GPT 빌더', prompt: 'ChatGPT Custom GPT 만드는 법 알려줘' },
+      { label: '🔌 플러그인/GPT Store', prompt: 'ChatGPT GPT Store 활용법 알려줘' },
+      { label: '💻 코드 인터프리터', prompt: 'ChatGPT 코드 인터프리터 기능 알려줘' },
+    ]
+  },
+  'claude': {
+    name: 'Claude',
+    features: [
+      { label: '💬 기본 채팅', prompt: 'Claude 기본 채팅 기능 사용법 알려줘' },
+      { label: '📂 프로젝트', prompt: 'Claude Projects 기능 활용법 알려줘' },
+      { label: '🎨 아티팩트', prompt: 'Claude Artifacts 기능 활용법 알려줘' },
+      { label: '📄 문서 분석', prompt: 'Claude 문서 파일 분석 기능 알려줘' },
+      { label: '💻 코딩 & Claude Code', prompt: 'Claude 코딩 지원 및 Claude Code 활용법 알려줘' },
+      { label: '🔌 API 활용', prompt: 'Claude API 활용법과 연동 방법 알려줘' },
+    ]
+  },
+  'gemini': {
+    name: 'Gemini',
+    features: [
+      { label: '💬 기본 채팅', prompt: 'Gemini 기본 채팅 기능 사용법 알려줘' },
+      { label: '🔍 Google 검색 연동', prompt: 'Gemini Google 검색 연동 기능 알려줘' },
+      { label: '📊 Google Workspace 연동', prompt: 'Gemini Google Docs/Sheets 연동 활용법 알려줘' },
+      { label: '🖼️ 이미지 생성 (Imagen)', prompt: 'Gemini Imagen 이미지 생성 기능 알려줘' },
+      { label: '🎙️ 음성 대화', prompt: 'Gemini 음성 대화 기능 알려줘' },
+      { label: '💎 Gems (나만의 AI)', prompt: 'Gemini Gems 커스텀 AI 만드는 법 알려줘' },
+    ]
+  },
+  'midjourney': {
+    name: 'Midjourney',
+    features: [
+      { label: '🎨 기본 이미지 생성', prompt: 'Midjourney 기본 이미지 생성 방법 알려줘' },
+      { label: '✏️ 프롬프트 작성법', prompt: 'Midjourney 프롬프트 잘 쓰는 법 알려줘' },
+      { label: '🔄 이미지 변형 (Vary)', prompt: 'Midjourney Vary 기능으로 이미지 변형하는 법 알려줘' },
+      { label: '📐 비율 & 스타일 설정', prompt: 'Midjourney 이미지 비율과 스타일 파라미터 알려줘' },
+      { label: '🖼️ 레퍼런스 이미지 활용', prompt: 'Midjourney 레퍼런스 이미지 사용법 알려줘' },
+    ]
+  },
+  'cursor': {
+    name: 'Cursor AI',
+    features: [
+      { label: '⚡ 기본 코드 자동완성', prompt: 'Cursor AI 기본 코드 자동완성 기능 알려줘' },
+      { label: '💬 Chat 기능', prompt: 'Cursor AI Chat으로 코드 질문하는 법 알려줘' },
+      { label: '✏️ Composer 기능', prompt: 'Cursor AI Composer로 코드 작성하는 법 알려줘' },
+      { label: '📁 코드베이스 분석', prompt: 'Cursor AI 전체 코드베이스 분석 기능 알려줘' },
+      { label: '🔌 VS Code 연동', prompt: 'Cursor AI VS Code 기반 환경 설정법 알려줘' },
+    ]
+  },
+  'perplexity': {
+    name: 'Perplexity',
+    features: [
+      { label: '🔍 AI 검색', prompt: 'Perplexity AI 검색 기능 사용법 알려줘' },
+      { label: '📚 심화 리서치', prompt: 'Perplexity 심화 리서치(Deep Research) 기능 알려줘' },
+      { label: '📎 출처 확인', prompt: 'Perplexity 출처 인용 및 확인 기능 알려줘' },
+      { label: '🗂️ 스페이스 기능', prompt: 'Perplexity Spaces 협업 기능 알려줘' },
+    ]
+  },
+  'notion ai': {
+    name: 'Notion AI',
+    features: [
+      { label: '✍️ 글쓰기 보조', prompt: 'Notion AI 글쓰기 및 편집 보조 기능 알려줘' },
+      { label: '📝 회의록 요약', prompt: 'Notion AI 회의록 자동 요약 기능 알려줘' },
+      { label: '🔍 AI 검색 (Q&A)', prompt: 'Notion AI Q&A 검색 기능 알려줘' },
+      { label: '🤖 AI 자동화', prompt: 'Notion AI 자동화 기능 알려줘' },
+    ]
+  }
+};
+
+const SYSTEM_BEGINNER = `당신은 AI 도구를 처음 접하는 입문자를 위한 친절한 가이드입니다. 전문 용어를 최대한 피하고, 비유와 쉬운 언어로 설명하세요.
+
+## 유형 1: 특정 AI 도구를 물어볼 때
+📌 **[도구명] — 한마디로 이런 거예요**
+일상적인 비유로 설명 (예: "카카오톡처럼 대화하듯 쓰는 AI")
+
+🙋 **이런 분께 추천해요**
+이 도구가 딱 맞는 상황 2가지
+
+🚀 **지금 바로 시작하기**
+1. [주소] 접속 → 구글/카카오 계정으로 가입
+2. 처음에 이렇게 입력해보세요: "[예시 입력문]"
+
+💡 **이것만 알면 돼요**
+완전 초보도 바로 쓸 수 있는 팁 2개 (전문용어 없이)
+
+😊 **좋은 점 / 아쉬운 점**
+각 2개, 쉬운 말로
+
+📎 **사이트**: URL
+
+## 유형 2: 업무에 맞는 AI를 추천받고 싶을 때
+🗂 **[업무명], AI로 이렇게 할 수 있어요**
+
+**가장 추천: [도구명]** ⭐
+- 왜냐면: 쉬운 이유 한 줄
+- 이렇게 써보세요: 구체적인 첫 사용 방법
+- 사이트: URL
+
+**이것도 있어요: [도구명]**
+- 이건 이럴 때 더 좋아요: 한 줄
+- 사이트: URL
+
+💬 **한줄 정리**: "[이 상황]이라면 [도구명]부터 써보세요!"
+
+## 공통 원칙
+- 전문용어 금지. 꼭 써야 하면 괄호로 쉽게 설명
+- 답변은 500자 이내, 따뜻하고 친근한 말투
+- 한국 사용자 기준 접근 가능한 도구 우선`;
+
+const SYSTEM_ADVANCED = `당신은 AI 도구에 익숙한 실무자를 위한 전문 가이드입니다. 기능 깊이, 실무 활용법, 다른 도구와의 비교에 집중하세요.
+
+## 특정 AI 기능을 물어볼 때 (예: "Claude Projects 기능 활용법 알려줘")
+📌 **[기능명]** — 한 줄 포지셔닝
+
+🎯 **이 기능으로 할 수 있는 것**
+실무 유스케이스 3가지 구체적으로
+
+⚙️ **핵심 사용법**
+단계별로 간결하게 (스크린샷 설명 대신 텍스트로)
+
+🔥 **파워유저 팁**
+일반 사용자가 모르는 활용법 2가지
+
+⚡ **한계 & 주의사항**
+알고 쓰면 좋은 제약 1-2가지
+
+📎 **사이트**: URL | 요금: 관련 플랜 정보
+
+## 업무에 맞는 AI를 추천받고 싶을 때
+🗂 **[업무명] 워크플로우 최적화**
+
+**1순위: [도구명]** ⭐
+- 선택 이유 & 핵심 기능
+- 주의사항
+- URL
+
+**2순위 / 3순위**: 간략히, 언제 더 나은지
+
+💬 **추천 스택**: [도구A] + [도구B] 조합 제안
+
+## 공통 원칙
+- 실무 중심, 구체적 수치/기능명 포함
+- 답변 600자 이내로 밀도 있게
+- 한국 사용자 기준 접근 가능한 도구 우선`;
+
+const GEMINI_KEY = 'YOUR_API_KEY_HERE';
+let level = 'beginner';
+let loading = false;
+const messagesEl = document.getElementById('messages');
+
+function setLevel(lv) {
+  level = lv;
+  document.getElementById('btn-beginner').className = 'lv-btn' + (lv === 'beginner' ? ' active-beginner' : '');
+  document.getElementById('btn-advanced').className = 'lv-btn' + (lv === 'advanced' ? ' active-advanced' : '');
+  const label = lv === 'beginner'
+    ? '🌱 입문자 모드로 바꿨어요 — 쉽고 친절하게 안내해드릴게요!'
+    : '⚡ 실무자 모드로 바꿨어요 — 어떤 기능이 궁금한지 골라서 물어보세요!';
+  addBotMessage(label, lv);
+}
+
+function addBotMessage(text, lv, features) {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  const html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  const badge = lv === 'beginner'
+    ? '<span class="lv-badge b">🌱 입문자 모드</span><br>'
+    : lv === 'advanced'
+    ? '<span class="lv-badge a">⚡ 실무자 모드</span><br>'
+    : '';
+  let featHtml = '';
+  if (features && features.length) {
+    featHtml = '<div class="feat-btns">' +
+      features.map(f => `<button class="feat-btn" onclick="sendChip('${f.prompt}', true)">${f.label}</button>`).join('') +
+      '</div>';
+  }
+  div.innerHTML = `<div class="msg-av">AI</div><div class="msg-bubble">${badge}${html}${featHtml}</div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-bubble">${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing';
+  div.innerHTML = `<div class="msg-av">AI</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+let fromFeatureBtn = false;
+
+function sendChip(text, isFeature) {
+  fromFeatureBtn = !!isFeature;
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function findAiFeatures(text) {
+  const lower = text.toLowerCase();
+  for (const key of Object.keys(AI_FEATURES)) {
+    if (lower.includes(key)) return AI_FEATURES[key];
+  }
+  return null;
+}
+
+function isSimpleAiQuery(text) {
+  const lower = text.toLowerCase();
+  const simplePatterns = ['알려줘', '뭐야', '뭐에요', '소개해줘', '설명해줘'];
+  const hasSimple = simplePatterns.some(p => lower.includes(p));
+  const hasFeatureKeyword = ['기능', '방법', '활용', '사용법', '어떻게', '프로젝트', '아티팩트', '빌더', '연동'].some(p => lower.includes(p));
+  return hasSimple && !hasFeatureKeyword;
+}
+
+async function sendMessage() {
+  if (loading) return;
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  addMessage('user', text);
+
+  if (level === 'advanced' && !fromFeatureBtn) {
+    const aiData = findAiFeatures(text);
+    if (aiData && isSimpleAiQuery(text)) {
+      addBotMessage(
+        `**${aiData.name}**의 어떤 기능이 궁금하세요?\n아래에서 골라주세요 👇`,
+        'advanced',
+        aiData.features
+      );
+      fromFeatureBtn = false;
+      return;
+    }
+  }
+  fromFeatureBtn = false;
+
+  loading = true;
+  document.getElementById('send-btn').disabled = true;
+  showTyping();
+  const system = level === 'beginner' ? SYSTEM_BEGINNER : SYSTEM_ADVANCED;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: text }] }],
+          generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+        })
+      }
+    );
+    const data = await res.json();
+    removeTyping();
+    if (data.error) {
+      addBotMessage('오류: ' + data.error.message);
+    } else {
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '응답을 가져오지 못했어요.';
+      addBotMessage(reply, level);
+    }
+  } catch (e) {
+    removeTyping();
+    addBotMessage('오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+  }
+  loading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+addBotMessage('안녕하세요! 저는 AI 도구 가이드봇입니다 👋\n\n위에서 본인 수준을 먼저 선택해주세요:\n\n🌱 **AI 처음이에요** — 쉬운 말로 차근차근 설명\n⚡ **어느 정도 알아요** — 기능별로 골라서 깊게 설명\n\n그다음 궁금한 AI를 물어보거나, 업무를 말하면 맞는 도구를 추천해드려요!');
+</script>
+</body>
+</html>
